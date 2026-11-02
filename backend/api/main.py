@@ -1,8 +1,12 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from core.config import settings
 from contextlib import asynccontextmanager
 from core.config import settings
 from core.jobs import JobStatus, ProgressFn, job_manager
+
+from core.indexer import run_index
+from core.ingest import IngestError, make_repo_id, validate_source
+from models import IndexRequest
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -32,4 +36,19 @@ def get_job(job_id: str):
 @app.get("/jobs")
 def list_jobs():
     return job_manager.list()
+
+@app.post("/repos", status_code=status.HTTP_202_ACCEPTED)
+def index_repo(req: IndexRequest):
+    try:
+        validate_source(req.source)
+    except IngestError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    repo_id = make_repo_id(req.source)
+    job, created = job_manager.submit(
+        repo_id=repo_id,
+        source=req.source,
+        work=lambda report: run_index(repo_id, req.source, report),
+    )
+    return {"job": job, "created": created}
 
