@@ -17,3 +17,6 @@ backend/data/
 
 # Local index workspace (root)
 data/
+
+# Secrets
+.env
