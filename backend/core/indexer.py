@@ -7,7 +7,7 @@ from pathlib import Path
 from core.config import settings
 from core.ingest import collect_files, materialize
 from core.jobs import ProgressFn
-
+from core.parser import parse_file
 
 def repo_dir(repo_id: str) -> Path:
     return settings.workspace_dir / repo_id
@@ -22,20 +22,30 @@ def run_index(repo_id: str, source: str, report: ProgressFn) -> None:
     if not files:
         raise ValueError("No supported source files found")
 
-    # Phases 4-8 (parse, link, summarize, store) will go here.
+    chunks = []
+    for i, path in enumerate(files):
+        chunks.extend(parse_file(path, root))
+        report(f"parsing ({i + 1}/{len(files)})", 0.10 + 0.50 * (i + 1) / len(files))
 
-    report("writing manifest", 0.95)
-    write_manifest(repo_id, source, root, files)
-
-
-def write_manifest(repo_id: str, source: str, root: Path, files: list[Path]) -> None:
+    # Temporary: dump chunks so you can inspect them. Phase 8 replaces this.
     out = repo_dir(repo_id)
     out.mkdir(parents=True, exist_ok=True)
+    (out / "chunks.json").write_text(json.dumps([c.to_dict() for c in chunks], indent=2))
+
+    report("writing manifest", 0.95)
+    write_manifest(repo_id, source, root, files, chunks)
+
+
+def write_manifest(repo_id, source, root, files, chunks) -> None:
+    out = repo_dir(repo_id)
+    out.mkdir(parents=True, exist_ok=True)
+    errors = [c.path for c in chunks if c.parse_error]
     (out / "manifest.json").write_text(json.dumps({
         "repo_id": repo_id,
         "source": source,
         "root": str(root),
         "file_count": len(files),
-        "files": [f.relative_to(root).as_posix() for f in files],
+        "chunk_count": len(chunks),
+        "parse_errors": errors,
         "indexed_at": datetime.now(timezone.utc).isoformat(),
     }, indent=2))
