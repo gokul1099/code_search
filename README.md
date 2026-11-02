@@ -6,6 +6,8 @@ You give it a GitHub URL or a local folder. It parses the Python code into funct
 
 > **Status: prototype.** Python files only, one process, in-memory job tracking, no auth, no tests yet. See [What I'd do next](#h-what-id-do-differently-with-more-time).
 
+**Demo:** [Screen Recording 2026-11-03 at 1.32.52 AM.mov](Screen%20Recording%202026-11-03%20at%201.32.52%E2%80%AFAM.mov)
+
 ---
 
 ## a. Quick setup
