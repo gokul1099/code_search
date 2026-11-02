@@ -2,7 +2,6 @@ from pathlib import Path
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
@@ -10,6 +9,8 @@ class Settings(BaseSettings):
     clone_timeout_s: int = 300
     supported_extensions: tuple[str, ...] = (".py",)
     max_file_bytes: int = 500_000                # skip huge/generated files
+    groq_api_key: str = ""                       # read from GROQ_API_KEY in backend/.env
+    groq_model: str = "openai/gpt-oss-120b"
 
 
 settings = Settings()

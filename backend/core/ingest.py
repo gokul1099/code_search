@@ -27,6 +27,12 @@ def is_github_url(source: str) -> bool:
     return bool(GITHUB_RE.match(source.strip()))
 
 
+def validate_source(source: str) -> None:
+    """Fail fast (before a background job starts) if the source is neither a GitHub URL nor a folder."""
+    if not is_github_url(source) and not Path(source).expanduser().is_dir():
+        raise IngestError(f"Not a directory or GitHub URL: {source}")
+
+
 def repo_id_for(source: str) -> str:
     key = source.strip().rstrip("/") if is_github_url(source) else str(Path(source).expanduser().resolve())
     return hashlib.sha1(key.encode()).hexdigest()[:12]
